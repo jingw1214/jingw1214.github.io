@@ -130,7 +130,7 @@ HTML代码中，使用`v-for`指令展示一个更加复杂的数据--数据列�
 使用新的指令和属性：
 - `methods`属性，该属性用于在Vue对象中定义方法。
 - `v-on:click`指令（语法糖：`@click`），该指令用于监听某个元素的点击事件，并且需要指定当发生点击时，执行的方法（通常是methods中定义的方法）。
-*[语法糖]:简写
+<!--语法糖:简写-->
 ```html
 <div id="app">
     <h2>当前计数：{{counter}}</h2>
@@ -393,6 +393,8 @@ console控制台输入：
 
 `v-bind`用于绑定一个或多个属性值，或者向另一个组件传递props值(这个学到组件时再介绍)
 在开发中，有很多属性需要动态进行绑定，比如图片的链接src、网站的链接href、动态绑定一些类、样式等等。
+
+不绑定的话，属性值会被当做字符串使用，而不是变量名或者布尔值。
 
 #### 2.2 v-bind 绑定基本属性
 比如通过Vue实例中的data绑定元素的src和href，代码如下∶
@@ -2288,7 +2290,7 @@ export {test, Person}
 
 **export default**
 某些情况下，一个模块中包含某个的功能，我们并不希望给这个功能命名，而且让导入者可以自己来命名
-口这个时候就可以使用export default
+这个时候就可以使用export default
 导出变量
 
 ```javascript
@@ -3360,19 +3362,20 @@ reject:拒绝状态，当我们主动回调了reject时，就处于该状态，�
 # 六、Vuex详情
 ## 1.认识Vuex
 ### 1.1 Vue是做什么的
-官方解释: Vuex是一个专为Vue.js应用程序开发的状态管理模式。
-- 它采用集中式存储管理应用的所有组件的状态，并以相应的规则保证状态以一种可预测的方式发生变化。
+官方解释: Vuex是一个专为Vue.js应用程序开发的**状态管理模式**。
+- 它采用**集中式存储管理**应用的所有组件的状态，并以相应的规则保证状态以一种可预测的方式发生变化。
 - Vuex也集成到Vue的官方调试工具devtools extension，提供了诸如零配置的 time-travel调试、状态快照导入导出等高级调试
 功能。
 
 **状态管理**，可以简单的将其看成把需要多个组件共享的变量全部存储在一个对象里面。然后，将这个对象放在页层的Vue实例中，让其他组件可以使用。
+
 那么，多个组件是不是就可以共享这个对象中的所有变量属性了呢?
 
 如果是这样的话，为什么官方还要专门出一个插件Vuex呢?难道我们不能自己封装一个对象来管理吗?
 - 当然可以，只是我们要先想想VueJS带给我们最大的便利是什么呢?没错，就是**响应式**。
 - 如果你自己封装实现一个对象能不能保证它里面所有的属性做到响应式呢?当然也可以，只是自己封装可能稍微麻烦一些。
 - 不用怀疑，Vuex就是为了提供这样一个在多个组件间共享状态的插件，用它就可以了。
-## 1.2 管理什么状态
+### 1.2 管理什么状态
 有什么状态时需要我们在多个组件间共享的呢?
 - 如果你做过大型开放，你一定遇到过多个状态，在多个界面间的共享问题。
 - 比如用户的登录状态、用户名称、头像、地理位置信息等等。
@@ -3380,50 +3383,234 @@ reject:拒绝状态，当我们主动回调了reject时，就处于该状态，�
 - 这些状态信息，我们都可以放在统一的地方，对它进行保存和管理，而且它们还是响应式的(待会儿我们就可以看到代码了，莫着急）。
 
 OK，从理论上理解了状态管理之后，让我们从实际的代码再来看看状态管理。毕竟，Talk is cheap, Show me the code.(来自Linus)
-## 1.3 单界面的状态管理
+### 1.3 单界面的状态管理
+我们知道，要在单个组件中进行状态管理是一件非常简单的事情
+
+什么意思呢?我们来看下面的图片。
+
 ![在这里插入图片描述](https://gitee.com/jingw1/cloud-image/raw/master/img/682f4061a3904ee7a86ec8c3923792f5.png)
 
 图片的理解：
-State：就是我们的状态。（你姑且可以当做就是
-data中的属性)
+
+State：就是我们的状态。（你姑且可以当做就是data中的属性)
+
 View：视图层，可以针对State的变化，显示不同的信息。
+
 Actions：这里的Actions主要是用户的各种操作︰点击、输入等等，会导致状态的改变。
-## 1.4 多界面的状态管理
-Vue已经帮我们做好了单个界面的状态管理，但是如果是多个界面呢?多个试图都依赖同一个状态（一个状态改了，多个界面需要进行更新)
-不同界面的Actions都想修改同一个状态(Home.vue需要修改，Profile.vue也需要修改这个状态)
-也就是说对于某些状态(状态1/状态2/状态3)来说只属于我们某一个试图，但是也有一些状态(状态a/状态b/状态c)属于多个试图共同想要维护的
-状态1/状态2/状态3你放在自己的房间中，你自己管理自己用，没问题。但是状态a/状态b/状态c我们希望交给一个大管家来统一帮助我们管理!!!没错，Vuex就是为我们提供这个大管家的工具。
-全局单例模式(大管家)
-我们现在要做的就是将共享的状态抽取出来，交给我们的大管家，统一进行管理。之后，你们每个试图，按照我规定好的规定，进行访问和修改等操作。
-这就是Vuex背后的基本思想。
-## 1.5 Vuex状态管理图例
+
+### 1.4 多界面的状态管理
+- Vue已经帮我们做好了单个界面的状态管理，但是如果是多个界面呢?
+  - 多个试图都依赖同一个状态（一个状态改了，多个界面需要进行更新)
+  - 不同界面的Actions都想修改同一个状态(Home.vue需要修改，Profile.vue也需要修改这个状态)
+
+- 也就是说对于某些状态(状态1/状态2/状态3)来说只属于我们某一个试图，但是也有一些状态(状态a/状态b/状态c)属于多个试图共同想要维护的。
+  - 状态1/状态2/状态3你放在自己的房间中，你自己管理自己用，没问题。
+  - 但是状态a/状态b/状态c我们希望交给一个大管家来统一帮助我们管理!!!
+  - 没错，Vuex就是为我们提供这个大管家的工具。
+
+- 全局单例模式(大管家)
+  - 我们现在要做的就是将共享的状态抽取出来，交给我们的大管家，统一进行管理。
+  - 之后，你们每个试图，按照我规定好的规定，进行访问和修改等操作。
+  - 这就是Vuex背后的基本思想。
+
+### 1.5 Vuex状态管理图例
+
+官方推荐用Mutations修改State。
+
+Mutations里面有异步操作的话，工具跟踪不到，所以只能用来做同步操作。
+
+有异步操作的时候，需要在actions里面做-- 发送请求。
+
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/1386d58429d24dc3bca3164f1bfdd803.png?x-oss-process=image/watermark,type_ZHJvaWRzYW5zZmFsbGJhY2s,shadow_50,text_Q1NETiBA5Luy5aSP5aSc55qE5byA5Zy6,size_20,color_FFFFFF,t_70,g_se,x_16)
-## 2 简单的案例
-### 2.1 vuex 安装
+
+### 1.6 devtools和mutations
+
+vue devtools插件的安装，见：https://blog.csdn.net/li22356/article/details/113092495
+
+![image-20211023170430669](https://i.loli.net/2021/10/23/IOBeU1Ha8oWF6mY.png)
+
+点击切换到vuex，可以查看下方的state，可以查看状态如何修改，以及跟踪状态。
+
+![image-20211023170522196](https://i.loli.net/2021/10/23/zhluEk1oO7exKsM.png)
+
+
+
+## 2 vuex 安装
 安装vue的插件：
 `npm install vuex --save`
-### 2.2 vuex 使用
-调用vue.use()插件
-vue devtools插件的安装，见：https://blog.csdn.net/li22356/article/details/113092495
-![在这里插入图片描述](https://gitee.com/jingw1/cloud-image/raw/master/img/d2772ff3b40b4d8b971d6a4997f57306.png)
+
+## 3 简单的案例
+
+![在这里插入图片描述](https://i.loli.net/2021/10/23/kSMYJRXbOBThvlt.png)
+
+
+
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/8c432d4d97884d25a5ea7c5ff2362a43.png?x-oss-process=image/watermark,type_ZHJvaWRzYW5zZmFsbGJhY2s,shadow_50,text_Q1NETiBA5Luy5aSP5aSc55qE5byA5Zy6,size_20,color_FFFFFF,t_70,g_se,x_16)
 ![在这里插入图片描述](https://gitee.com/jingw1/cloud-image/raw/master/img/c666d712164b4c50b5ade895bdc66d2d.png)
+
+store文件夹里的index.js文件
+
+```
+import Vuex from 'vuex'
+
+// 1. 安装插件
+vue.use(Vuex)
+
+// 2.创建对象
+const store = new Vuex.Store({
+	state: {
+		counter: 1000
+	},
+	// 写同步方法，修改state
+	mutations: {
+		// 默认的参数
+		increment(state) {
+			state.counter++
+		},
+		decrement(state) {
+			state.counter--
+		}
+	},
+	actions: {
+	
+	}
+})
+```
+
+App.vue文件
+
+```
+<script>
+	import HelloVuex from '/component/HelloVuex'
+	
+	export default {
+		name: 'App',
+		component: {
+			HelloVuex
+		},
+		data() {
+			return {
+				message: '我是App组件'
+			}
+		},
+		methods: {
+			addtion() {
+				// 使用commit()方法提交，第一个参数为mutations里的方法名
+				this.$store.commit('increment')
+			},
+			subtraction() {
+				this.$store.commit('decrement')
+			}
+		}
+	}
+</script>
+```
+
+
+
+
 
 
 ## 3.vuex 核心概念
 vuex有几个比较核心的概念：
 State 
 Getters
-Mutation
+Mutations
 Action
 Module 
-###  3.1 State单一状态树
-在一个项目中，只建一个store
+
+###  3.1 State 
+#### 1.单一状态树 -- 单一数据源
+
+如果你的状态信息是保存到多个Store对象中的，那么之后的管理和维护等等都会变得特别困难。
+
+所以Vuex也使用了单—状态树来管理应用层级的全部状态。
+
+单一状态树能够让我们最直接的方式找到某个状态的片段，而且在之后的维护和调试过程中，也可以非常方便的管理和维护。
+
+**在一个项目中，只建一个store对象。**
+
+#### 2.store的使用 
+
+![image-20211023172634655](https://i.loli.net/2021/10/23/E7daYi4lItQ9jkB.png)
+
+#### 3.store的修改
+
+通过mutations进行修改
+
 ###  3.2 getters 
+
 #### 3.2.1 getters 基本使用
-![在这里插入图片描述](https://gitee.com/jingw1/cloud-image/raw/master/img/61e596a2a7874f378a364951e1998e8b.png)
+
+通过getters从store中获取一些state变异后的状态。
+
+
+
+```
+const store = new vuex.store(
+  state: {
+    students: [
+      {id: 110，name: 'why ' , age: 18]，
+      {id: 111，name : 'kobe ' , age: 21}，
+      {id: 112，name: 'lucy' ,age: 25},
+      {id: 113，name: 'lilei ', age: 30},
+    ]
+  }
+	// 通过getters，获取state变异后的值
+  getters: {
+    getGreaterAgesCount: state => {
+      return state.students.fi1ter(s => s.age >= 20).1ength
+    }
+  }
+}
+
+
+```
+
+类似于 单个组件里的计算属性。
+
+```
+computed: {
+  getGreaterAgesCount() {
+    return this.$store.state.students.fi1ter(age => age >= 20). length
+  }
+}
+```
+
 #### 3.2.2 getters 作为参数和传递参数
-![在这里插入图片描述](https://gitee.com/jingw1/cloud-image/raw/master/img/a28d8f4dcc074917b290b234bd838386.png)
+
+1.getters作为参数
+
+如果我们已经有了一个获取所有年龄大于20岁学生列表的getters,那么代码可以这样来写
+
+```
+getters: {
+  greaterAgesStus : state => {
+  	return state.students.filter(s => s.age >= 20)
+  }，
+  greaterAgesCount: (state，getters) => {
+  	return getters.greaterAgesstus.length
+  }
+}
+```
+
+2.getters传递参数
+
+getters默认是不能传递参数的,如果希望传递参数,那么只能让getters本身返回另一个函数.
+
+比如上面的案例中,我们希望根据ID获取用户的信息
+
+```
+getters: {
+  stuByID: state => {
+  	return id => {
+  		return state.students.find(s => s.id === id)
+  	}
+  }
+ }
+```
+
+
 
 ![在这里插入图片描述](https://gitee.com/jingw1/cloud-image/raw/master/img/3323153cbdeb41f2a8eec5d43e33682a.png)
 ###  3.3 mutation 
@@ -3431,8 +3618,8 @@ Module
 - vuex的store状态的更新唯一方式∶提交Mutation
 
 - Mutation主要包括两部分∶
-	- 字符串的事件类型( type )
-	- 一个回调函数( handler ) ,该回调函数的第一个参数就是state。
+	- 字符串的事件类型( type ) -- 函数名
+	- 一个回调函数( handler ) ,该回调函数的第一个参数就是state。-- 函数部分
 - mutation的定义方式:
 
 ```javascript
@@ -3446,16 +3633,32 @@ mutations: {
 - 在methods选项中，通过mutation更新
 
 ```javascript
-increment() {
+increment: function() {
 	this.$store.commit('increment')
 }
 ```
 #### 3.3.2 mutation 传递参数
 
 - 在通过mutation更新数据的时候，有可能我们希望携带一些额外的参数
+
 - 参数被称为是mutation的载荷(payload)
+
 - mutation中的代码：
-![在这里插入图片描述](https://gitee.com/jingw1/cloud-image/raw/master/img/09ca8cc46dca4e43b85bcca24c6e9833.png)
+
+  ```
+  decrement(state, n) {
+  	state.count -= n
+  }
+  // Vue中的方法
+  decrement: function() {
+  	this.$store.commit('decrement', 2)
+  }
+  ```
+
+  
+
+- ![在这里插入图片描述](https://gitee.com/jingw1/cloud-image/raw/master/img/09ca8cc46dca4e43b85bcca24c6e9833.png)
+
 - 但是如果参数不是一个呢?
 有很多参数需要传递的时候，我们通常会以对象的形式传递，也就是payload是一个对象，再从对象中取出相关的信息。
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/15b28813a23446a790e083403b6ffd28.png)
@@ -3492,9 +3695,10 @@ delete补充：
 主要的原因是当我们使用devtools时,可以devtools可以帮助我们捕捉mutation的快照.但是如果是异步操作,那么devtools将不能很好的追踪这个操作什么时候会被完成.
 比如我们之前的代码,当执行更新时, devtools中，state中的info数据一直没有被改变，因为他无法追踪到。
 ![在这里插入图片描述](https://gitee.com/jingw1/cloud-image/raw/master/img/8aae5db6b13b47de9b4e75cc60082463.png)
-所以，通常请款下，不要在mutations中进行异步的操作。
+所以，通常情况下，不要在mutations中进行异步的操作。
+
 ### 3.4 action
-我们强调，不要再Mutation中进行异步操作.
+我们强调，不要在Mutation中进行异步操作.
 但是某些情况,我们确实希望在Vuex中进行一些异步操作，比如网络请求,必然是异步的.这个时候怎么处理呢?
 Action类似于Mutation,但是是用来代替Mutation进行异步操作的.
 #### 3.4.1 action的使用
@@ -3587,7 +3791,7 @@ this.$store来直接调用的.
 
 vue中发送网络请求有非常多的方式,那么,在开发中,如何选择呢?
 
-### 选择一:传统的Ajax是基于`XMLHttpRequestXHR)`
+### 选择一:传统的Ajax是基于`XMLHttpRequest(XHR)`
 为什么不用它呢?
 非常好解释,配置和调用方式等非常混乱.
 编码起来看起来就非常蛋疼.
@@ -3596,9 +3800,9 @@ vue中发送网络请求有非常多的方式,那么,在开发中,如何选择�
 ### 选择二:在前面的学习中,我们经常会使用`jQuery-Ajax`
 相对于传统的Ajax非常好用.
 为什么不选择它呢?
-首先,我们先明确一点:在Vue的整个开发中都是不需要
-使用jQuery 了.
+首先,我们先明确一点:在Vue的整个开发中都是不需要使用jQuery 了.
 那么,就意味着为了方便我们进行一个网络请求,特意引用一个jQuery,你觉得合理吗?
+
 jQuery的代码1w+行.
 Vue的代码才1w+行.
 完全没有必要为了用网络请求就引用这个重量级的框架.
@@ -3606,14 +3810,17 @@ Vue的代码才1w+行.
 ### 选择三:官方在Vue1.x的时候,推出了`Vue-resource`.Vue-resource的体积相对于jQuery小很多.≥另外Vue-resource是官方推出的.
 
 为什么不选择它呢?
-在Vue2.0退出后, Vue作者就在GitHub的Issues中说明
-了去掉vue-resource,并且以后也不会再更新.
-那么意味着以后vue-reource不再支持新的版本时,也不
-会再继续更新和维护.
+
+在Vue2.0退出后, Vue作者就在GitHub的Issues中说明了去掉vue-resource,并且以后也不会再更新.
+
+那么意味着以后vue-reource不再支持新的版本时,也不会再继续更新和维护.
+
 对以后的项目开发和维护都存在很大的隐患.
 
-### 选择四:在说明不再继续更新和维护vue-resource的同时,作者还推荐了一个框架: `axios`为什么不用它呢?
-axios有非常多的优点,并且用起来也非常方便。稍后,我们对他详细学习.
+### 选择四:在说明不再继续更新和维护vue-resource的同时,作者还推荐了一个框架: `axios `。为什么不用它呢?
+axios有非常多的优点,并且用起来也非常方便。
+
+稍后,我们对他详细学习.
 
 ## 2.JSONP
 
@@ -3622,69 +3829,114 @@ axios有非常多的优点,并且用起来也非常方便。稍后,我们对他�
 ### 2.1 JSONP原理的回顾
 
 JSONP的原理是什么呢?
-JSONP的核心在于通过`<script>`标签的src来帮助我们请求数据.原因是我们的项目部署在domain1.com服务器上时，是不能直接访问domain2.com服务器上的资料的.
+
+JSONP的核心在于通过`<script>`标签的src来帮助我们请求数据.
+
+原因是我们的项目部署在domain1.com服务器上时，是不能直接访问domain2.com服务器上的资料的.
+
 这个时候我们利用`<script>`标签的src帮助我们去服务器请求到数据,将数据当做一个javascript的函数来执行,并且执行的过程中传入我们需要的json.
+
 所以封装jsonp的核心就在于我们监听window上的jsonp进行回调时的名称。
 
 ### 2.2 JSONP代码的封装
 我们一起自己来封装一个处理JSONP的代码吧.
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/b8a4d4fe32ef4fb6a22975899f8b243b.png?x-oss-process=image/watermark,type_ZHJvaWRzYW5zZmFsbGJhY2s,shadow_50,text_Q1NETiBA5Luy5aSP5aSc55qE5byA5Zy6,size_13,color_FFFFFF,t_70,g_se,x_16)
 
+![image-20211022165042820](https://i.loli.net/2021/10/22/ShOLiUeswFWnQ9r.png)
+
 ## 3.axios的使用
 
 ### 3.1 认识axios
 
-#### 3.1.1 为什么选择axios
+为什么选择axios：
 
-- 为什么选择axios：
+- vue作者官方推荐
 
-  - vue作者官方推荐
+![image-20210917201825728](https://gitee.com/jingw1/cloud-image/raw/master/img/image-20210917201825728.png)
 
-  ![image-20210917201825728](https://gitee.com/jingw1/cloud-image/raw/master/img/image-20210917201825728.png)
-
-  - 功能特点
-    - 在浏览器中发送XMLHttpRequests请求
-    - 在node.js中发送http请求
-    - 支持Promise API
-    - 拦截请求和响应转换请求和响应数据
-    - 等等
-      
+- 功能特点
+  - 在浏览器中发送XMLHttpRequests请求
+  - 在node.js中发送http请求
+  - 支持Promise API
+  - 拦截请求和响应转换请求和响应数据
+  - 等等
+    
 
 ![在这里插入图片描述](https://gitee.com/jingw1/cloud-image/raw/master/img/64e7b7ebeda64103aee5d3a1929c8d70.png)
 
-####  3.1.2 axiox请求方式
 
-支持多种请求方式：
-- axios(config)
-- axios.request(config)
-- axios.get(url[, config])
-- axios.delete(url[, config])
-- axios.head(url[, config])
-- axios.post(url[, data[, configl])
-- axios.put(url[, data[, config]])
-- axios.patch(url[, data[, config]])
 
 ### 3.2 axios框架的基本使用
 
 1.安装axios框架：
 
-`npm install axios --save`
+```
+npm install axios --save
+```
 
 注：线上程序依然适用，故用`--save`，而不是`--save -dev`
 
+
+
 2.import导入
 
-3.axios对象
+```js
+import axios from 'axios'
+```
 
 
 
-API：
+3.通过向axios对象，传递config配置创建请求
 
-可以通过http://httpbin.org/进行验证，有很多的API。
+```
+axios({
+	url: 'httpbin.org',
+	methods: 'get',
+	...
+})
+```
 
-老师使用的是：123.207.32.32:8000/home/multidata
+> API：
+>
+> 可以通过http://httpbin.org/进行验证，有很多的API。
+>
+> 老师使用的是：123.207.32.32:8000/home/multidata
 
+### 3.3 axios API
 
+可以通过向 `axios` 传递相关配置来创建请求
+
+#### axios(config)
+
+```
+// 发送 POST 请求
+axios({
+  method: 'post',
+  url: '/user/12345',
+  data: {
+    firstName: 'Fred',
+    lastName: 'Flintstone'
+  }
+});
+// 获取远端图片
+axios({
+  method:'get',
+  url:'http://bit.ly/2mTM3nY',
+  responseType:'stream'
+})
+  .then(function(response) {
+  response.data.pipe(fs.createWriteStream('ada_lovelace.jpg'))
+});
+```
+
+#### axios(url[, config])
+
+```
+// 发送 GET 请求（默认的方法）
+axios('/user/12345');
+```
+
+#### 案例
 
 以发送get请求为例，代码如下：
 
@@ -3710,6 +3962,8 @@ axios({
 
 报错的原因是：url 写成uri了。 
 
+
+
 ### 3.2 发送请求
 
 #### 3.2.1 发送get请求
@@ -3718,7 +3972,7 @@ axios({
 
 有请求参数的2种写法：
 
-1.直接放在url的后面，用`?`拼接
+##### **1.直接放在url的后面，用`?`拼接**
 
 ```javascript
 import axios from 'axios'
@@ -3730,7 +3984,23 @@ axios({
 })
 ```
 
-2.写在params选项中
+##### **2.写在params选项中**
+
+#### 
+
+```javascript
+async getUserList() {
+  const { data: res } = await this.$http.get('users', {
+    params: this.queryInfo
+  })
+  if(res.meta.status !== 200) {
+    return this.$message.error('获取用户信息失败！')
+  }
+  this.userlist = res.data.users
+}
+```
+
+
 
 ```javascript
 import axios from 'axios'
@@ -3747,11 +4017,47 @@ axios({
 })
 ```
 
+#### 3.1.2 发送post请求
 
+```javascript
+axios.post('/user', {
+    firstName: 'Fred',
+    lastName: 'Flintstone'
+  })
+  .then(function (response) {
+    console.log(response);
+  })
+  .catch(function (error) {
+    console.log(error);
+  });
+```
+
+==post是不是也可以用data选项方式==
+
+####  3.1.2 axiox请求方式的别名
+
+为方便起见，为所有支持的请求方法提供了别名。
+
+- axios.request(config)
+- axios.get(url[, config])
+- axios.delete(url[, config])
+- axios.head(url[, config])
+- axios.options(url[,config])
+- axios.post(url[, data[, configl])
+- axios.put(url[, data[, config]])
+- axios.patch(url[, data[, config]])
 
 #### 3.2.2 发送并发请求
 
-- 有时候,我们可能需求同时发送两个请求。
+处理并发请求的助手函数
+
+axios.all(iterable)
+
+axios.spread(callback)
+
+
+
+- 有时候,我们可能需求同时发送两个请求。l两个请求同时到达后，才能做处理。
 
   - 使用`axios.all`,可以放入多个请求的数组.
 
@@ -3783,13 +4089,15 @@ axios({
 
 ![image-20210916155749985](https://gitee.com/jingw1/cloud-image/raw/master/img/image-20210916155749985.png)
 
-#### 3.2.3 axios全局配置
+
+
+### 3.3 axios全局配置
 
 - 在上面的示例中,我们的BaseURL是固定的
   - 事实上，在开发中可能很多参数都是固定的.
   - 这个时候我们可以进行一些抽取,也可以利用axiox的全局配置
 
-在main.js文件中进行设置即可。
+在main.js文件中进行默认的axios全局设置即可。
 
 ```javascript
 axios.defaults.baseURL = 'http://123.207.32.32:8000'
@@ -3836,18 +4144,24 @@ axios.defaults.baseURL 和axios对象中的url变量拼接起来，为发送请�
 
 #### 3.3.2 如何创建axios实例
 
+main.js文件中
+
 ```javascript
+import anxios from 'anxios'
+
 // 创建axios的实例
 const instance1 = axios.create({
   baseURL: 'http://123.207.32.32:8000',
   timeout: 5000
 })
+
 // 传入配置信息
 instance1({
   url: '/home/multidata'
 }).then(res => {
   console.log(res);
 })
+
 // 传入配置信息
 instance1({
   url: '/home/data',
@@ -3862,39 +4176,41 @@ instance1({
 
 
 
-#### 3.3.3 axios的封装
+### 3.4 axios的封装
 
-1.一般使用（不做封装）
+之前学习的都是在main.js中写的代码，真实开发中需要将其封装起来。
 
-```JavaScript
+#### 1.一般使用（不做封装）
+
+```html
 <template>
   <div id="app">
     <img src="./assets/logo.png">
     <div>{{result}}</div>
-    <router-view/>
+    <router-view />
   </div>
 </template>
 
 <script>
-import axios from 'axios'
+  import axios from 'axios'
 
-export default {
-  name: 'App',
-  data() {
-    return {
-      result: ''
+  export default {
+    name: 'App',
+    data() {
+      return {
+        result: ''
+      }
+    },
+    // 监听组件创建完，发送请求
+    created() {
+      axios({
+        url: 'http://123.207.32.32:8000/home/multidata'
+      }).then(res => {
+        console.log(res);
+        this.result = res;
+      })
     }
-  },
-  // 监听组件创建完，发送请求
-  created() {
-    axios({
-      url: 'http://123.207.32.32:8000/home/multidata'
-    }).then(res => {
-      console.log(res);
-      this.result = res;
-    })
   }
-}
 </script>
 
 <style>
@@ -3906,19 +4222,278 @@ export default {
 
 注意：对于第三方框架的使用，一定注意不要每个组件都引用和使用一遍。
 
-2.进行封装：
+#### 2.进行封装：
+
+问题：
+
+使用第三方框架时，注意不要在每个组件文件中都对第三方有个依赖。否则第三方更换时，每个文件都需要修改。
+
+进行封装：
 
 使用单独一个文件对该第三方框架进行封装，使所有的组件进行网络请求时，都是面向自己的这个文件的。
 
+具体步骤：
+
+1.`src`文件夹下，新建一个文件夹`network`（涉及到网络层的封装都放到这个文件夹里），其中新建`request.js`文件。
+
+2.request.js封装实例函数；
+
+3.main.js中使用封装的模块
+
+##### 方法一：
+
+request.js文件中
+
+```js
+import axios from 'axios'
+
+// 不用export default，因为可能要封装多个实例
+export function request(config, success, failure) {
+	// 1.创建axios的实例 -- instance
+	const instance = axios.create({
+		baseURL: 'http://123.207.32.32:8000',
+		timeout: 5000
+	})
+	// 传入配置信息，发送真正的网络请求
+	instance(config)
+    .then(res => {
+      console.log(res)
+    	success(res)
+    })
+    .catch(err => {
+      console.log(err)
+    	failure(res)
+    })
+}
+// 可以建多个实例
+export function instance2() {
+
+}
+```
+
+main.js文件中
+
+```js
+import {request} from './network/request'
+
+request({
+	url: '/home/multidata'
+}, res => {
+	console.log(res)
+}, err => {
+	console.log(err)
+})
+```
+
+##### 方法二：
+
+request.js中
+
+```js
+import axios from 'axios'
+
+// 不用export default，因为可能要封装多个实例
+export function request(config) {
+	// 1.创建axios的实例 -- instance
+	const instance = axios.create({
+		baseURL: 'http://123.207.32.32:8000',
+		timeout: 5000
+	})
+	// 传入配置信息，发送真正的网络请求
+	instance(config.baseconfig)
+    .then(res => {
+      console.log(res)
+    	config.success(res)
+    })
+    .catch(err => {
+      console.log(err)
+    	config.failure(res)
+    })
+}
+// 可以建多个实例
+export function instance2() {
+
+}
+```
+
+main.js中
+
+```
+import {request} from './network/request'
+
+request({
+	baseconfig: {
+		url: '/home/multidata'
+	}，
+	success: function(res) {
+	
+	},
+	failure: function(err) {
+	
+	}
+})
+```
+
+##### 最终方案 -- promise方式
+
+request.js中
+
+```js
+import axios from 'axios'
+
+// 不用export default，因为可能要封装多个实例
+export function request(config) {
+  return new Promise((resolve, reject) => {
+    // 1.创建axios的实例 -- instance
+		const instance = axios.create({
+      baseURL: 'http://123.207.32.32:8000',
+      timeout: 5000
+		})
+    // 传入配置信息，发送真正的网络请求
+    instance(config)
+      .then(res => {
+       resolve(res)
+      })
+      .catch(err => {
+        reject(err)
+      })
+  })
+}
+	
+	
+}
+// 可以建多个实例
+export function instance2() {
+
+}
+```
+
+main.js中
+
+```js
+import {request} from './network/request'
+
+request({
+	url: '/home/multidata'
+}).then(res => {
+	console.log(res)
+}).catch(err => {
+	console.log(err)
+})
+```
+
+##### 最最终方案
+
+request.js中
+
+```js
+import axios from 'axios'
+
+// 不用export default，因为可能要封装多个实例
+export function request(config) {
+  // 1.创建axios的实例 -- instance
+  const instance = axios.create({
+    baseURL: 'http://123.207.32.32:8000',
+    timeout: 5000
+  })
+  // 传入配置信息，发送真正的网络请求
+  return instance(config)
+}
+
+// 可以建多个实例
+export function instance2() {
+
+}
+```
+
+main.js中
+
+```js
+import {request} from './network/request'
+
+request({
+	url: '/home/multidata'
+}).then(res => {
+	console.log(res)
+}).catch(err => {
+	console.log(err)
+})
+```
+
+### 3.5 axios 的拦截器
+
+#### 1. 如何使用拦截器
+
+axios提供了拦截器，用于我们在发送每次请求或者得到相应后，进行对应的处理。
+如何使用拦截器呢?
+
+```js
+// 配置请求和响应拦截
+instance.interceptors.request.use(config => {
+  console.log('来到了request拦截success中');
+  return config
+}, err => {
+	console.log('来到了request拦截failure中');
+  return err
+})
+
+instance.interceptors.response.use(response => {
+  console.log('来到了response拦截success中');
+	return response.data
+}, err => {
+	console.log('来到了response拦截failure中');
+  return err
+})
+
+
+```
+
+#### 3.4.1 请求拦截器
+
+request.js中
+
+```js
+import axios from 'axios'
+
+// 不用export default，因为可能要封装多个实例
+export function request(config) {
+  // 1.创建axios的实例 -- instance
+  const instance = axios.create({
+    baseURL: 'http://123.207.32.32:8000',
+    timeout: 5000
+  })
+  // 2.axios 的拦截器
+  instance.interceptors.request.use(config => {
+    // 拦截config 后，必须返回，否则请求就拿不到 config
+    // 1.比如config中的一些信息不符合服务器的要求，拼接上一些header或信息转换
+    // 2.比如每次发送网结请求时，都希望在界面中显示一个请求的图标
+    // 3.某些网络请求（比如登录token），必须携带一些特殊的信息
+    return config
+  }, err => {
+    // 发送未成功
+  })
+  
+  // 3.传入配置信息，发送真正的网络请求
+  return instance(config)
+}
+```
 
 
 
+#### 3.4.2 响应拦截器
 
-### 3.4 axios 的拦截器
+```js
+// 2.axios 的拦截器
+  instance.interceptors.response.use(res => {
+    // 响应成功
+    // 必须返回res.data，否则被拦截，main.js中的 console.log(res) 会输出 undefined
+    return res.data
+  }, err => {
+    // 响应未成功
+  })
+```
 
-### 3.4.1 请求拦截器
 
-### 3.4.2 响应拦截器
 
 # 八、项目实战
 
